@@ -7,8 +7,8 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="/lvarbiter" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj/" />
+				<Option output="lvarbiter" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -19,13 +19,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="bitmapreader.h" />
-		<Unit filename="bmpreader.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="main.c">
-			<Option compilerVar="CC" />
-		</Unit>
+		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
