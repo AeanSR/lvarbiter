@@ -10,9 +10,11 @@
 
 BITMAPFILEHEADER head1;
 BITMAPINFOHEADER head2;
+RGBTRIPLE* orig = NULL;
 RGBTRIPLE* buf1 = NULL;
 RGBTRIPLE* buf2 = NULL;
 char* closed = NULL;
+#define ori(x,y) orig[(y) * head2.biWidth + (x)]
 #define img1(x,y) buf1[(y) * head2.biWidth + (x)]
 #define img2(x,y) buf2[(y) * head2.biWidth + (x)]
 
@@ -60,6 +62,7 @@ int main(int argc, char** argv){
 	fread(&head1, sizeof head1, 1, f);
 	fread(&head2, sizeof head2, 1, f);
 	assert(sizeof(RGBTRIPLE) == 3);
+	orig = (RGBTRIPLE*)malloc(head2.biWidth * head2.biHeight * sizeof(RGBTRIPLE) + 12);
 	buf1 = (RGBTRIPLE*)malloc(head2.biWidth * head2.biHeight * sizeof(RGBTRIPLE) + 12);
 	buf2 = (RGBTRIPLE*)calloc(head2.biWidth * head2.biHeight, sizeof(RGBTRIPLE) + 12);
 	fseek(f, head1.bfOffBits, SEEK_SET);
@@ -69,6 +72,7 @@ int main(int argc, char** argv){
 		mb += head2.biWidth;
 		fread(mb, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
 	}
+	memcpy(orig, buf1, head2.biWidth * head2.biHeight * sizeof(RGBTRIPLE) + 12);
 
 	for (int y = 0; y < head2.biHeight; y++)
         for (int x = 0; x < head2.biWidth; x++){
@@ -125,34 +129,62 @@ int main(int argc, char** argv){
 	}
 
     int mingreysum = head2.biWidth;
+    int* greysum = new int[head2.biHeight];
     for (int y = 1; y < head2.biHeight - 1; y++){
-        int greysum = 0;
+        greysum[y] = 0;
         for (int x = 1; x < head2.biWidth - 1; x++){
-            greysum += img2(x,y).rgbtBlue;
+            greysum[y] += img2(x,y).rgbtBlue;
         }
-        greysum /= 255;
-        for (int x = 0; x < head2.biWidth; x++){
-            img2(x,y).rgbtBlue = img2(x,y).rgbtGreen = img2(x,y).rgbtRed = (x < greysum) ? 0 : 255;
+        greysum[y] /= 255;
+        mingreysum = greysum[y] < mingreysum ? greysum[y] : mingreysum;
+    }
 
+    int top = 0;
+    int bottom = 0;
+    for (int y = head2.biHeight - 2; y; y--){
+        if (!top && greysum[y] > mingreysum + 20) top = y;
+        else if (top && !bottom && greysum[y] < mingreysum + 20){bottom = y; break;}
+    }
+
+    delete[] greysum;
+    greysum = new int[head2.biWidth];
+    mingreysum = head2.biHeight;
+    for (int x = 1; x < head2.biWidth - 1; x++){
+        greysum[x] = 0;
+        for (int y = bottom; y < top; y++){
+            greysum[x] += img2(x,y).rgbtBlue;
         }
-        mingreysum = greysum < mingreysum ? greysum : mingreysum;
+        greysum[x] /= 255;
+        mingreysum = greysum[x] < mingreysum ? greysum[x] : mingreysum;
     }
-    for (int y = 0; y < head2.biHeight; y++){
-        img2(mingreysum + 20, y) = (RGBTRIPLE){0,0,255};
+
+    int left = 0;
+    int right = 0;
+    for (int x = 1; x < head2.biWidth - 1; x++){
+        if (!left && greysum[x] > mingreysum + 5) left = x;
+        if (left && greysum[x] > mingreysum + 5) right = x;
     }
+    right++;
+
+    BITMAPFILEHEADER nhead1 = head1;
+    BITMAPINFOHEADER nhead2 = head2;
+    nhead2.biWidth = right - left;
+    nhead2.biHeight = top - bottom;
+    size_t rowsize = (24 * nhead2.biWidth + 31)/32;
+    rowsize *= 4;
+    nhead2.biSizeImage = rowsize * nhead2.biHeight;
+    nhead1.bfSize = 54 + nhead2.biSizeImage;
 
 	fclose(f);
 	f = fopen("spec.bmp", "wb");
-	fwrite(&head1, sizeof head1, 1, f);
-	fwrite(&head2, sizeof head2, 1, f);
+	fwrite(&nhead1, sizeof(nhead1), 1, f);
+	fwrite(&nhead2, sizeof(nhead2), 1, f);
 	void * p = calloc(head1.bfOffBits,1);
 	fwrite(p, head1.bfOffBits, 1, f);
 	fseek(f, head1.bfOffBits, SEEK_SET);
-	mb = buf2;
-	for (int i = 0; i < head2.biHeight; i++){
-		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
-		mb += head2.biWidth;
-		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	for (int i = 0; i < nhead2.biHeight; i++){
+		fwrite(&ori(left, bottom + i), sizeof(RGBTRIPLE), nhead2.biWidth, f);
+        fwrite(p, 1, (sizeof(RGBTRIPLE) * nhead2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * nhead2.biWidth) % 4) : 0, f);
 	}
 	fclose(f);
 
