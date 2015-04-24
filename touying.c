@@ -2,10 +2,11 @@ int in[1920][1080];
 int out[1920];
 for(int i=0;i<1920;i++)
 {
-
-for(int j=0;j<1080;j++)
+    out[i]=0;
+    for(int j=0;j<1080;j++)
     {out[i]+=in[i][j];
     }
+    out[i]/=255;
 }
 int minout;
 minout=out[0];
@@ -62,4 +63,43 @@ for(int i=1;i<count;i++)
 {
     finleft= finleft<left[i]? finleft:left[i];
     finright=finright>right[i]?finright:right[i];
+}
+int outr[1080];
+for(int i=finleft;i<=finright;i++)
+{
+    outr[i]=0;
+    for(int j=0;j<1080;j++)
+    {
+        outr[i]+=in[i][j];
+    }
+    outr[i]/=255;
+}
+int minoutr;
+minoutr=outr[0];
+for(int k=1;k<1080;k++)
+{
+    minoutr= minoutr<outr[k]?minoutr:outr[k];
+}
+minoutr+=5;
+int top[500];
+count=0;
+for(int d=1078;d>0;d--)
+{
+    if (outr[d]>minoutr){
+        if (outr[d+1]<minoutr){
+            top[count]=d;
+            count++;
+        }
+    }
+}
+count=0;
+int bottom[500];
+for(int d=1078;d>0;d--)
+{
+    if (outr[d]<minoutr){
+        if (outr[d+1]>minoutr){
+            bottom[count]=d;
+            count++;
+        }
+    }
 }
