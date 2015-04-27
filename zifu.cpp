@@ -32,7 +32,7 @@ void zifufenge(int chang, int kuan, int* in) {
 
     for( int i = 1; i < chang - 2; i++ ) {
         if( zimu[i] > minzimu ) {
-            if( zimu[i - 1] <= minzimu ) {
+            if( zimu[i + 1] <= minzimu ) {
                 zifur[zishu] = i;
                 zishu++;
             }
