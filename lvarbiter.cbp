@@ -21,6 +21,7 @@
 		</Compiler>
 		<Unit filename="main.cpp" />
 		<Unit filename="touying.cpp" />
+		<Unit filename="zifu.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

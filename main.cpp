@@ -24,6 +24,11 @@ extern int bottom[500];
 extern int finleft;
 extern int finright;
 
+void zifufenge( int chang, int kuan, int* in );
+extern int zishu;
+extern int zifur[256];
+extern int ziful[256];
+
 int rec( size_t x, size_t y ) {
     if ( img2( x, y ).rgbtBlue < 255 ) return 0;
     if ( closed[y * head2.biWidth + x] ) return 0;
@@ -79,7 +84,7 @@ int main( int argc, char** argv ) {
         fread( mb, 1, ( sizeof( RGBTRIPLE ) * head2.biWidth ) % 4 ? 4 - ( ( sizeof( RGBTRIPLE ) * head2.biWidth ) % 4 ) : 0, f );
     }
     memcpy( orig, buf1, head2.biWidth * head2.biHeight * sizeof( RGBTRIPLE ) + 12 );
-	fclose(f);
+    fclose( f );
 
     for ( int y = 0; y < head2.biHeight; y++ )
         for ( int x = 0; x < head2.biWidth; x++ ) {
@@ -174,9 +179,10 @@ int main( int argc, char** argv ) {
         right++;
     */
     line_slice();
-    printf("lines found: %d\n", count);
-    printf("finwidth: %d-%d\n", finleft, finright);
-
+    printf( "lines found: %d\n", count );
+    printf( "finwidth: %d-%d\n", finleft, finright );
+    system("rd /S /Q result");
+    system("md result");
     int outidx = count;
     while( outidx-- ) {
         BITMAPFILEHEADER nhead1 = head1;
@@ -189,8 +195,10 @@ int main( int argc, char** argv ) {
         nhead1.bfSize = 54 + nhead2.biSizeImage;
 
 
-		char buf[256] = {0};
-        sprintf(buf, "line%d.bmp", outidx + 1);
+        char buf[256] = {0};
+        sprintf( buf, "md result\\line%d", outidx+1 );
+        system(buf);
+        sprintf( buf, "result\\line%d\\line%d.bmp", outidx + 1, outidx+1 );
         FILE* f = fopen( buf, "wb" );
         fwrite( &nhead1, sizeof( nhead1 ), 1, f );
         fwrite( &nhead2, sizeof( nhead2 ), 1, f );
@@ -202,6 +210,47 @@ int main( int argc, char** argv ) {
             fwrite( p, 1, ( sizeof( RGBTRIPLE ) * nhead2.biWidth ) % 4 ? 4 - ( ( sizeof( RGBTRIPLE ) * nhead2.biWidth ) % 4 ) : 0, f );
         }
         fclose( f );
+    }
+
+    outidx = count;
+    while( outidx-- ) {
+        int chang = finright - finleft;
+        int kuan = top[outidx] - bottom[outidx];
+        int* in = new int[chang * kuan];
+        for ( int x = finleft; x < finright; x++ ) {
+            for( int y = bottom[outidx]; y < top[outidx]; y++ ) {
+                in[(x-finleft) + (y-bottom[outidx]) * chang] = img2( x, y ).rgbtBlue;
+            }
+        }
+        zifufenge( chang, kuan, in );
+        printf( "characters found: %d\n", zishu );
+        int chridx = zishu;
+        while( chridx-- ) {
+            BITMAPFILEHEADER nhead1 = head1;
+            BITMAPINFOHEADER nhead2 = head2;
+            nhead2.biWidth = zifur[chridx] - ziful[chridx];
+            nhead2.biHeight = top[outidx] - bottom[outidx];
+            size_t rowsize = ( 24 * nhead2.biWidth + 31 ) / 32;
+            rowsize *= 4;
+            nhead2.biSizeImage = rowsize * nhead2.biHeight;
+            nhead1.bfSize = 54 + nhead2.biSizeImage;
+
+
+            char buf[256] = {0};
+            sprintf( buf, "result\\line%d\\chr%d.bmp", outidx + 1, chridx + 1 );
+            FILE* f = fopen( buf, "wb" );
+            fwrite( &nhead1, sizeof( nhead1 ), 1, f );
+            fwrite( &nhead2, sizeof( nhead2 ), 1, f );
+            void * p = calloc( head1.bfOffBits, 1 );
+            fwrite( p, head1.bfOffBits, 1, f );
+            fseek( f, head1.bfOffBits, SEEK_SET );
+            for ( int i = 0; i < nhead2.biHeight; i++ ) {
+                fwrite( &ori( ziful[chridx], bottom[outidx] + i ), sizeof( RGBTRIPLE ), nhead2.biWidth, f );
+                fwrite( p, 1, ( sizeof( RGBTRIPLE ) * nhead2.biWidth ) % 4 ? 4 - ( ( sizeof( RGBTRIPLE ) * nhead2.biWidth ) % 4 ) : 0, f );
+            }
+            fclose( f );
+        }
+        delete[] in;
     }
     return 0;
 }
