@@ -20,6 +20,7 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="main.cpp" />
+		<Unit filename="touying.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
