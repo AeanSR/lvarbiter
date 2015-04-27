@@ -65,24 +65,6 @@ void line_slice() {
     }
 
     printf( "column found: %d\n", count );
-    FILE* f = fopen( "spec.bmp", "wb" );
-    for( int i = 0; i < head2.biWidth; i++ ) {
-        for( int j = 0; j < head2.biHeight; j++ ) {
-            img1( i, j ).rgbtBlue = img1( i, j ).rgbtGreen = img1( i, j ).rgbtRed = out[i] > j ? 0 : 255;
-        }
-    }
-    fwrite( &head1, sizeof head1, 1, f );
-    fwrite( &head2, sizeof head2, 1, f );
-    void * p = calloc( head1.bfOffBits, 1 );
-    fwrite( p, head1.bfOffBits, 1, f );
-    fseek( f, head1.bfOffBits, SEEK_SET );
-    RGBTRIPLE* mb = buf1;
-    for ( int i = 0; i < head2.biHeight; i++ ) {
-        fwrite( mb, sizeof( RGBTRIPLE ), head2.biWidth, f );
-        mb += head2.biWidth;
-        fwrite( p, 1, ( sizeof( RGBTRIPLE ) * head2.biWidth ) % 4 ? 4 - ( ( sizeof( RGBTRIPLE ) * head2.biWidth ) % 4 ) : 0, f );
-    }
-    fclose( f );
 
     int width[1000], widthsum = 0;
     for( int w = 0; w < count; w++ ) {

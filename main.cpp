@@ -7,6 +7,7 @@
 #include <math.h>
 #include <algorithm>
 #include <functional>
+int outidx;
 
 BITMAPFILEHEADER head1;
 BITMAPINFOHEADER head2;
@@ -183,7 +184,7 @@ int main( int argc, char** argv ) {
     printf( "finwidth: %d-%d\n", finleft, finright );
     system("rd /S /Q result");
     system("md result");
-    int outidx = count;
+    outidx = count;
     while( outidx-- ) {
         BITMAPFILEHEADER nhead1 = head1;
         BITMAPINFOHEADER nhead2 = head2;
@@ -211,6 +212,93 @@ int main( int argc, char** argv ) {
         }
         fclose( f );
     }
+
+	for ( int y = 0; y < head2.biHeight; y++ )
+        for ( int x = 0; x < head2.biWidth; x++ ) {
+            BYTE t1 = ori( x, y ).rgbtRed > ori( x, y ).rgbtBlue ? ori( x, y ).rgbtRed - ori( x, y ).rgbtBlue : 0;
+            BYTE t2 = ori( x, y ).rgbtGreen > ori( x, y ).rgbtBlue ? ori( x, y ).rgbtGreen - ori( x, y ).rgbtBlue : 0;
+            img1( x, y ).rgbtGreen = t1 * t2 / 255;
+            //img1(x,y).rgbtGreen = (int)img1(x,y).rgbtGreen * img1(x,y).rgbtGreen / 255;
+        }
+
+    for ( int y = 0; y < head2.biHeight; y++ )
+        for ( int x = 0; x < head2.biWidth; x++ ) {
+            BYTE filter[5];
+            filter[0] = ( x ? img1( x - 1, y ).rgbtGreen : img1( x, y ).rgbtGreen );
+            filter[1] = ( img1( x, y ).rgbtGreen );
+            filter[2] = ( x == head2.biWidth - 1 ? img1( x, y ).rgbtGreen : img1( x + 1, y ).rgbtGreen );
+            filter[3] = ( y ? img1( x, y - 1 ).rgbtGreen : img1( x, y ).rgbtGreen );
+            filter[4] = ( y == head2.biHeight - 1 ? img1( x, y ).rgbtGreen : img1( x, y + 1 ).rgbtGreen );
+            std::sort( filter, filter + 5, std::greater<BYTE>() );
+            img1( x, y ).rgbtBlue = filter[2];
+        }
+
+	for ( int y = 0; y < head2.biHeight; y++ )
+        for ( int x = 0; x < head2.biWidth; x++ )
+			img2(x, y).rgbtBlue = img1(x, y).rgbtBlue > 15 ? 255 : 0;
+
+	for ( int y = 0; y < head2.biHeight; y++ )
+        for ( int x = 5; x < head2.biWidth - 6; x++ ){
+			if (img2(x - 2, y).rgbtBlue == 255 && img2(x - 1, y).rgbtBlue == 255 && img2(x, y).rgbtBlue == 0){
+				int dist = 1;
+				for (; dist < 6; dist++){
+					if (img2(x + dist, y).rgbtBlue == 255 && img2(x + dist + 1, y).rgbtBlue == 255) break;
+				}
+				if (dist >= 6) continue;
+				while (dist--){
+					img2(x + dist, y).rgbtBlue = 255;
+				}
+				img2(x,y).rgbtBlue = 255;
+			}
+		}
+	for ( int y = 5; y < head2.biHeight - 6; y++ )
+        for ( int x = 5; x < head2.biWidth - 6; x++ ){
+			if (img2(x - 2, y - 2).rgbtBlue == 255 && img2(x - 1, y - 1).rgbtBlue == 255 && img2(x, y).rgbtBlue == 0){
+				int dist = 1;
+				for (; dist < 6; dist++){
+					if (img2(x + dist, y + dist).rgbtBlue == 255 && img2(x + dist + 1, y + dist + 1).rgbtBlue == 255) break;
+				}
+				if (dist >= 6) continue;
+				while (dist--){
+					img2(x + dist, y + dist).rgbtBlue = 255;
+				}
+				img2(x,y).rgbtBlue = 255;
+			}
+		}
+	for ( int y = 5; y < head2.biHeight - 6; y++ )
+        for ( int x = 5; x < head2.biWidth - 6; x++ ){
+			if (img2(x - 2, y + 2).rgbtBlue == 255 && img2(x - 1, y + 1).rgbtBlue == 255 && img2(x, y).rgbtBlue == 0){
+				int dist = 1;
+				for (; dist < 6; dist++){
+					if (img2(x + dist, y - dist).rgbtBlue == 255 && img2(x + dist + 1, y - dist - 1).rgbtBlue == 255) break;
+				}
+				if (dist >= 6) continue;
+				while (dist--){
+					img2(x + dist, y - dist).rgbtBlue = 255;
+				}
+				img2(x,y).rgbtBlue = 255;
+			}
+		}
+
+	{	FILE* f = fopen("spec.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img2(i, j).rgbtBlue = img2(i, j).rgbtGreen = img2(i, j).rgbtRed = img2(i, j).rgbtBlue;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf2;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
 
     outidx = count;
     while( outidx-- ) {
@@ -245,7 +333,7 @@ int main( int argc, char** argv ) {
             fwrite( p, head1.bfOffBits, 1, f );
             fseek( f, head1.bfOffBits, SEEK_SET );
             for ( int i = 0; i < nhead2.biHeight; i++ ) {
-                fwrite( &ori( ziful[chridx], bottom[outidx] + i ), sizeof( RGBTRIPLE ), nhead2.biWidth, f );
+                fwrite( &ori( finleft + ziful[chridx], bottom[outidx] + i ), sizeof( RGBTRIPLE ), nhead2.biWidth, f );
                 fwrite( p, 1, ( sizeof( RGBTRIPLE ) * nhead2.biWidth ) % 4 ? 4 - ( ( sizeof( RGBTRIPLE ) * nhead2.biWidth ) % 4 ) : 0, f );
             }
             fclose( f );
