@@ -14,6 +14,7 @@ BITMAPINFOHEADER head2;
 RGBTRIPLE* orig = NULL;
 RGBTRIPLE* buf1 = NULL;
 RGBTRIPLE* buf2 = NULL;
+RGBTRIPLE* buf3 = NULL;
 char* closed = NULL;
 #define ori(x,y) orig[(y) * head2.biWidth + (x)]
 #define img1(x,y) buf1[(y) * head2.biWidth + (x)]
@@ -26,6 +27,7 @@ extern int finleft;
 extern int finright;
 
 void zifufenge( int chang, int kuan, int* in );
+void give_me_a_face(int left, int right, int bottom, int top);
 extern int zishu;
 extern int zifur[256];
 extern int ziful[256];
@@ -77,6 +79,7 @@ int main( int argc, char** argv ) {
     orig = ( RGBTRIPLE* )malloc( head2.biWidth * head2.biHeight * sizeof( RGBTRIPLE ) + 12 );
     buf1 = ( RGBTRIPLE* )malloc( head2.biWidth * head2.biHeight * sizeof( RGBTRIPLE ) + 12 );
     buf2 = ( RGBTRIPLE* )calloc( head2.biWidth * head2.biHeight, sizeof( RGBTRIPLE ) + 12 );
+    buf3 = ( RGBTRIPLE* )calloc( head2.biWidth * head2.biHeight, sizeof( RGBTRIPLE ) + 12 );
     fseek( f, head1.bfOffBits, SEEK_SET );
     RGBTRIPLE* mb = buf1;
     for ( int i = 0; i < head2.biHeight; i++ ) {
@@ -237,6 +240,8 @@ int main( int argc, char** argv ) {
         for ( int x = 0; x < head2.biWidth; x++ )
 			img2(x, y).rgbtBlue = img1(x, y).rgbtBlue > 15 ? 255 : 0;
 
+    memcpy( buf3, buf2, head2.biWidth * head2.biHeight * sizeof( RGBTRIPLE ) + 12 );
+
 	for ( int y = 0; y < head2.biHeight; y++ )
         for ( int x = 5; x < head2.biWidth - 6; x++ ){
 			if (img2(x - 2, y).rgbtBlue == 255 && img2(x - 1, y).rgbtBlue == 255 && img2(x, y).rgbtBlue == 0){
@@ -340,5 +345,7 @@ int main( int argc, char** argv ) {
         }
         delete[] in;
     }
+
+    give_me_a_face(finleft, finright, bottom[0], top[0]);
     return 0;
 }
