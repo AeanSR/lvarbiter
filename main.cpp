@@ -28,7 +28,7 @@ extern int finleft;
 extern int finright;
 
 void zifufenge( int chang, int kuan, int* in );
-void give_me_a_face(int left, int right, int bottom, int top);
+int give_me_a_face(int left, int right, int bottom, int top, int line);
 extern int zishu;
 extern int zifur[256];
 extern int ziful[256];
@@ -467,6 +467,9 @@ int main( int argc, char** argv ) {
         delete[] in;
     }
 
-    give_me_a_face(finleft, finright, bottom[0], top[0]);
+    int dev = 0;
+    for(int i = 0; i < 6 && i <count; i++)
+        dev += give_me_a_face(finleft, finright, bottom[i], top[i], i);
+
     return 0;
 }
