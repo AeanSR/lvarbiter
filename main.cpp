@@ -19,6 +19,7 @@ char* closed = NULL;
 #define ori(x,y) orig[(y) * head2.biWidth + (x)]
 #define img1(x,y) buf1[(y) * head2.biWidth + (x)]
 #define img2(x,y) buf2[(y) * head2.biWidth + (x)]
+#define img3(x,y) buf3[(y) * head2.biWidth + (x)]
 void line_slice();
 extern int count;
 extern int top[500];
@@ -98,6 +99,26 @@ int main( int argc, char** argv ) {
             //img1(x,y).rgbtGreen = (int)img1(x,y).rgbtGreen * img1(x,y).rgbtGreen / 255;
         }
 
+	{	FILE* f = fopen("1.multiply.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img3(i, j).rgbtBlue = img3(i, j).rgbtGreen = img3(i, j).rgbtRed = img1(i, j).rgbtGreen;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf3;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
+
     for ( int y = 0; y < head2.biHeight; y++ )
         for ( int x = 0; x < head2.biWidth; x++ ) {
             BYTE filter[5];
@@ -110,6 +131,26 @@ int main( int argc, char** argv ) {
             img1( x, y ).rgbtBlue = filter[2];
         }
 
+	{	FILE* f = fopen("2.median.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img3(i, j).rgbtBlue = img3(i, j).rgbtGreen = img3(i, j).rgbtRed = img1(i, j).rgbtBlue;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf3;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
+
     for ( int y = 1; y < head2.biHeight - 1; y++ )
         for( int x = 1; x < head2.biWidth - 1; x++ ) {
             int gx = ( int )img1( x + 1, y - 1 ).rgbtBlue + 2 * ( int )img1( x + 1, y ).rgbtBlue + ( int )img1( x + 1, y + 1 ).rgbtBlue - ( int )img1( x - 1, y - 1 ).rgbtBlue - 2 * ( int )img1( x - 1, y ).rgbtBlue - ( int )img1( x - 1, y + 1 ).rgbtBlue;
@@ -117,9 +158,49 @@ int main( int argc, char** argv ) {
             img2( x, y ).rgbtBlue = ( unsigned char )( int )sqrt( gx * gx + gy * gy );
         }
 
+	{	FILE* f = fopen("3.sobel_operator.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img3(i, j).rgbtBlue = img3(i, j).rgbtGreen = img3(i, j).rgbtRed = img2(i, j).rgbtBlue;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf3;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
+
     for ( int y = 0; y < head2.biHeight; y++ )
         for ( int x = 0; x < head2.biWidth; x++ )
             img2( x, y ).rgbtBlue = img2( x, y ).rgbtBlue > 40 ? 255 : 0;
+
+	{	FILE* f = fopen("4.threshold.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img3(i, j).rgbtBlue = img3(i, j).rgbtGreen = img3(i, j).rgbtRed = img2(i, j).rgbtBlue;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf3;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
 
     for ( int i = 0; i < 3; i++ )
         for ( int y = 0; y < head2.biHeight; y++ )
@@ -134,6 +215,26 @@ int main( int argc, char** argv ) {
                 img2( x, y ).rgbtBlue = filter[2];
             }
 
+	{	FILE* f = fopen("5.3x_median.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img3(i, j).rgbtBlue = img3(i, j).rgbtGreen = img3(i, j).rgbtRed = img2(i, j).rgbtBlue;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf3;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
+
     closed = ( char * )calloc( head2.biWidth * head2.biHeight, 1 );
     for ( int x = 0; x < head2.biWidth; x++ ) {
         for ( int y = 0; y < head2.biHeight; y++ ) {
@@ -143,6 +244,26 @@ int main( int argc, char** argv ) {
             if ( ret < 60 ) rec2( x, y );
         }
     }
+
+    {	FILE* f = fopen("6.block_threshold.bmp", "wb");
+	for (int i = 0; i < head2.biWidth; i++) {
+		for (int j = 0; j < head2.biHeight; j++) {
+			img3(i, j).rgbtBlue = img3(i, j).rgbtGreen = img3(i, j).rgbtRed = img2(i, j).rgbtBlue;
+		}
+	}
+	fwrite(&head1, sizeof head1, 1, f);
+	fwrite(&head2, sizeof head2, 1, f);
+	void * p = calloc(head1.bfOffBits, 1);
+	fwrite(p, head1.bfOffBits, 1, f);
+	fseek(f, head1.bfOffBits, SEEK_SET);
+	RGBTRIPLE* mb = buf3;
+	for (int i = 0; i < head2.biHeight; i++) {
+		fwrite(mb, sizeof(RGBTRIPLE), head2.biWidth, f);
+		mb += head2.biWidth;
+		fwrite(p, 1, (sizeof(RGBTRIPLE) * head2.biWidth) % 4 ? 4 - ((sizeof(RGBTRIPLE) * head2.biWidth) % 4) : 0, f);
+	}
+	fclose(f);
+	}
     /*
         int mingreysum = head2.biWidth;
         int* greysum = new int[head2.biHeight];
